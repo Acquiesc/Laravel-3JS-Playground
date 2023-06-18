@@ -3,24 +3,23 @@ initializePage();
 var globalScene, globalCamera, globalRenderer;
 
 function initializePage() {
-	const scene = createScene();
-	const camera = createCamera();
-	const renderer = createRenderer();
+    const scene = createScene();
+    const camera = createCamera();
+    const renderer = createRenderer();
 
-	const cubeSize = 1;
-	const cubes = [];
+    const earth = createSphere(0, 0, 0, '/imgs/textures/earth_texture.jpg');
+    scene.add(earth);
 
-	for (let i = -1; i < 2; i++) {
-		const cube = createCube(i * (cubeSize + 1), 0, 0, cubeSize, cubeSize, cubeSize, 'rgb(255, 255, 0)');		cubes.push(cube);
-		scene.add(cube);
-	}
+    const cardFront = createPlane(0, 1.5, .5, '/imgs/textures/business-card-front.png');
+    scene.add(cardFront);
 
-	scene.add(camera);
+    const cardBack = createPlane(0, 1.5, -.5, '/imgs/textures/business-card-back.png');
+    cardBack.rotation.y = Math.PI; // Set rotation to 180 degrees (in radians)
+    scene.add(cardBack);
 
+    scene.add(camera);
 
-	scene.add( camera );
-
-	animate(cubes, scene, camera, renderer);
+    animate(earth, scene, camera, renderer);
 }
 
 function createScene() {
@@ -56,8 +55,8 @@ function createRenderer() {
 	return renderer;
 }
 
-function createCube(x, y, z, posx, posy, posz, colorRGB) {
-	const geometry = new THREE.BoxGeometry( posx, posy, posz );
+function createCube(x, y, z, len, width, height, colorRGB) {
+	const geometry = new THREE.BoxGeometry( len, width, height );
 	const material = new THREE.MeshBasicMaterial( { color: colorRGB } );
 	const cube = new THREE.Mesh( geometry, material );
 
@@ -66,15 +65,46 @@ function createCube(x, y, z, posx, posy, posz, colorRGB) {
 	return cube;
 }
 
-function animate(cubes, scene, camera, renderer) {
-	requestAnimationFrame(() => animate(cubes, scene, camera, renderer));
+function createPlane(x, y, z, texture_src) {
+    let loader = new THREE.TextureLoader();
+    let texture = loader.load( texture_src );
+    
+    const geometry = new THREE.PlaneGeometry( 2, 1 );
+    const material = new THREE.MeshBasicMaterial( { map: texture, side: THREE.DoubleSide } );
+    const plane = new THREE.Mesh( geometry, material );
 
-	cubes.forEach(cube => {
-		cube.rotation.x += 0.01;
-		cube.rotation.y += 0.01;
-	})
+    plane.position.set(x, y, z);
 
-	renderer.render( scene, camera );
+    return plane;
+}
+
+function createSphere(x, y, z, texture_src) {
+    let loader = new THREE.TextureLoader();
+    let texture = loader.load(texture_src);
+    
+    const geometry = new THREE.SphereGeometry( 1, 32, 32 ); 
+    const material = new THREE.MeshBasicMaterial( { map: texture } ); 
+    const sphere = new THREE.Mesh( geometry, material );
+
+    sphere.position.set(x, y, z);
+
+    return sphere;
+}
+
+function animate(earth, scene, camera, renderer) {
+    requestAnimationFrame(() => animate(earth, scene, camera, renderer));
+
+    // Rotate the earth
+    earth.rotation.x += 0.005;
+    earth.rotation.y += 0.005;
+
+    // Slowly rotate the camera
+    const rotationSpeed = 0.005;
+    camera.position.x = Math.cos(rotationSpeed) * camera.position.x - Math.sin(rotationSpeed) * camera.position.z;
+    camera.position.z = Math.sin(rotationSpeed) * camera.position.x + Math.cos(rotationSpeed) * camera.position.z;
+    camera.lookAt(scene.position);
+
+    renderer.render(scene, camera);
 }
 
 window.addEventListener('resize', function() {
